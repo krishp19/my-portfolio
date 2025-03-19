@@ -23,4 +23,71 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
+
+
+.container {
+  perspective: 1000px;
+  margin-top: 25px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-grow: 1;
+}
+
+
+/* Define the animation to rotate the cube */
+@keyframes rotateCube {
+  0% {
+    transform: rotateX(0deg) rotateY(0deg);
+  }
+  25% {
+    transform: rotateX(90deg) rotateY(90deg);
+  }
+  50% {
+    transform: rotateX(180deg) rotateY(180deg);
+  }
+  75% {
+    transform: rotateX(270deg) rotateY(270deg);
+  }
+  100% {
+    transform: rotateX(360deg) rotateY(360deg);
+  }
+}
+
+/* Face Styles */
+
+
+/* No hover effect for each face */
+.face:hover {
+  background: none; /* Ensure no white background appears */
+}
+
+.front {
+  transform: translateZ(100px);
+}
+
+.back {
+  transform: translateZ(-100px) rotateY(180deg);
+}
+
+.right {
+  transform: translateX(100px) rotateY(90deg);
+}
+
+.left {
+  transform: translateX(-100px) rotateY(-90deg);
+}
+
+.top {
+  transform: translateY(-100px) rotateX(90deg);
+}
+
+.bottom {
+  transform: translateY(100px) rotateX(-90deg);
+}
+
