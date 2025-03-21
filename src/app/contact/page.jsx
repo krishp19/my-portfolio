@@ -1,33 +1,58 @@
-// pages/Contact.jsx
 "use client";
 import { motion } from 'framer-motion';
 import DeveloperShowcase from '@/components/Card3D';
 import Footer from '@/components/Footer';
 import { FaEnvelope, FaPhone, FaFacebookF, FaTwitter, FaLinkedinIn, FaGooglePlusG } from 'react-icons/fa';
+import { useState } from 'react';
 
 const ContactPage = () => {
-  // Animation variant for fade-in on scroll
+  const [isLoading, setIsLoading] = useState(false);
+
   const fadeIn = {
     hidden: { opacity: 0, y: 50 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeOut" } },
   };
 
-  // Handle form submission (placeholder for now)
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Add form submission logic here (e.g., send data to an API)
-    alert("Form submitted! (This is a placeholder)");
+    setIsLoading(true);
+
+    const formData = {
+      name: e.target.name.value,
+      email: e.target.email.value,
+      subject: e.target.subject.value,
+      message: e.target.message.value,
+    };
+
+    try {
+      const response = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        alert('Message sent successfully!');
+        e.target.reset();
+      } else {
+        alert(`Error: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      alert('Something went wrong. Please try again later.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <div className="flex flex-col min-h-screen">
-
-      {/* Particle Background */}
       <DeveloperShowcase />
-
-      {/* Main Content */}
       <div className="flex-grow bg-transparent text-white font-sans pt-16 relative z-10">
-        {/* Hero Section with Grid Layout */}
         <motion.section
           initial="hidden"
           animate="visible"
@@ -35,13 +60,11 @@ const ContactPage = () => {
           className="lg:px-12 min-h-[60vh] px-4 py-12 sm:px-6"
         >
           <div className="grid grid-cols-1 gap-6 items-center max-w-5xl md:grid-cols-2 mx-auto">
-            {/* Left Side - Heading */}
             <div className="text-center md:text-left">
               <h1 className="bg-clip-text bg-gradient-to-r text-4xl text-transparent duration-300 ease-in-out font-extrabold from-teal-400 hover:scale-105 sm:text-5xl to-blue-500 tracking-tight transition-transform">
                 Let’s Connect and Build Something Amazing!
               </h1>
             </div>
-            {/* Right Side - Subheading */}
             <div className="text-center md:text-right">
               <p className="text-gray-300 text-lg sm:text-xl">
                 Have a project in mind? Let’s turn your ideas into reality—drop me a message!
@@ -50,7 +73,6 @@ const ContactPage = () => {
           </div>
         </motion.section>
 
-        {/* Contact Form and Info Section */}
         <motion.section
           initial="hidden"
           whileInView="visible"
@@ -59,15 +81,14 @@ const ContactPage = () => {
           className="lg:px-12 px-4 py-12 sm:px-6"
         >
           <div className="grid grid-cols-1 gap-8 max-w-5xl md:grid-cols-2 mx-auto">
-            {/* Contact Form */}
-            <div className="bg-gradient-to-r bg-opacity-20 p-6 rounded-lg shadow-lg backdrop-blur-md from-gray-900 to-gray-800">
+            <div className="bg-transparent bg-opacity-10 p-6 rounded-lg shadow-lg backdrop-blur-md">
               <h2 className="text-2xl text-teal-400 font-bold mb-4">
                 Send Me a Message
               </h2>
               <p className="text-gray-300 text-sm mb-6">
                 I’m just a message away—let’s create something extraordinary!
               </p>
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-4 relative">
                 <div>
                   <label htmlFor="name" className="text-gray-300 text-sm block mb-1">
                     Name
@@ -77,8 +98,9 @@ const ContactPage = () => {
                     id="name"
                     name="name"
                     required
-                    className="bg-gray-800/30 border border-gray-600 p-3 rounded-lg text-white w-full duration-300 focus:border-teal-400 focus:outline-none transition-colors"
+                    className="bg-gray-800/20 border border-gray-600 p-3 rounded-lg text-white w-full duration-300 focus:border-teal-400 focus:outline-none transition-colors"
                     placeholder="Your Name"
+                    disabled={isLoading}
                   />
                 </div>
                 <div>
@@ -90,8 +112,9 @@ const ContactPage = () => {
                     id="email"
                     name="email"
                     required
-                    className="bg-gray-800/30 border border-gray-600 p-3 rounded-lg text-white w-full duration-300 focus:border-teal-400 focus:outline-none transition-colors"
+                    className="bg-gray-800/20 border border-gray-600 p-3 rounded-lg text-white w-full duration-300 focus:border-teal-400 focus:outline-none transition-colors"
                     placeholder="Your Email"
+                    disabled={isLoading}
                   />
                 </div>
                 <div>
@@ -103,8 +126,9 @@ const ContactPage = () => {
                     id="subject"
                     name="subject"
                     required
-                    className="bg-gray-800/30 border border-gray-600 p-3 rounded-lg text-white w-full duration-300 focus:border-teal-400 focus:outline-none transition-colors"
+                    className="bg-gray-800/20 border border-gray-600 p-3 rounded-lg text-white w-full duration-300 focus:border-teal-400 focus:outline-none transition-colors"
                     placeholder="Subject"
+                    disabled={isLoading}
                   />
                 </div>
                 <div>
@@ -116,20 +140,30 @@ const ContactPage = () => {
                     name="message"
                     required
                     rows="4"
-                    className="bg-gray-800/30 border border-gray-600 p-3 rounded-lg text-white w-full duration-300 focus:border-teal-400 focus:outline-none transition-colors"
+                    className="bg-gray-800/20 border border-gray-600 p-3 rounded-lg text-white w-full duration-300 focus:border-teal-400 focus:outline-none transition-colors"
                     placeholder="Your Message"
+                    disabled={isLoading}
                   ></textarea>
                 </div>
                 <button
                   type="submit"
-                  className="bg-teal-400 rounded-lg text-gray-900 w-full duration-300 font-semibold hover:bg-teal-500 hover:scale-105 py-3 transition-all"
+                  className="bg-teal-400 rounded-lg text-gray-900 w-full duration-300 font-semibold hover:bg-teal-500 hover:scale-105 py-3 transition-all disabled:opacity-70 disabled:cursor-not-allowed relative"
+                  disabled={isLoading}
                 >
-                  Send Message
+                  {isLoading ? (
+                    <span className="flex items-center justify-center">
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-gray-900" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Sending...
+                    </span>
+                  ) : (
+                    'Send Message'
+                  )}
                 </button>
               </form>
             </div>
-
-            {/* Contact Information */}
             <div className="flex flex-col justify-center space-y-6">
               <h2 className="text-2xl text-teal-400 font-bold">
                 Get in Touch
@@ -157,7 +191,6 @@ const ContactPage = () => {
                   </a>
                 </div>
               </div>
-              {/* Social Media Icons */}
               <ul className="social-icons">
                 <li>
                   <a href="https://facebook.com" target="_blank" rel="noopener noreferrer">
@@ -184,27 +217,19 @@ const ContactPage = () => {
           </div>
         </motion.section>
       </div>
-
-      {/* Footer */}
       <Footer />
-
-      {/* Styling */}
       <style jsx global>{`
         .backdrop-blur-md {
           backdrop-filter: blur(10px);
           -webkit-backdrop-filter: blur(10px);
         }
-
-        /* Social Media Icons Styling */
         .social-icons {
           display: flex;
           gap: 10px;
         }
-
         .social-icons li {
           list-style: none;
         }
-
         .social-icons li a {
           align-items: center;
           width: 50px;
@@ -222,19 +247,16 @@ const ContactPage = () => {
           border: 2px solid #fff;
           z-index: 1;
         }
-
         .social-icons li a .icon {
           position: relative;
           color: #262626;
           transition: 0.5s;
           z-index: 3;
         }
-
         .social-icons li a:hover .icon {
           color: #fff;
           transform: rotateY(360deg);
         }
-
         .social-icons li a:before {
           content: "";
           position: absolute;
@@ -242,30 +264,24 @@ const ContactPage = () => {
           left: 0;
           width: 100%;
           height: 100%;
-          background: #2dd4bf; /* Default teal color */
+          background: #2dd4bf;
           transition: 0.5s;
           z-index: 2;
         }
-
         .social-icons li a:hover:before {
           top: 0;
         }
-
-        /* Specific colors for each icon on hover */
         .social-icons li:nth-child(1) a:before {
-          background: #3b5999; /* Facebook blue */
+          background: #3b5999;
         }
-
         .social-icons li:nth-child(2) a:before {
-          background: #55acee; /* Twitter blue */
+          background: #55acee;
         }
-
         .social-icons li:nth-child(3) a:before {
-          background: #0077b5; /* LinkedIn blue */
+          background: #0077b5;
         }
-
         .social-icons li:nth-child(4) a:before {
-          background: #dd4b39; /* Google Plus red */
+          background: #dd4b39;
         }
       `}</style>
     </div>

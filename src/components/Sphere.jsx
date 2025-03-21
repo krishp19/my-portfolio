@@ -1,162 +1,352 @@
-// components/OrbitingSpheres.jsx
+// components/Sphere.jsx
 "use client";
-import { useEffect, useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
-export default function OrbitingSpheres() {
+export default function DrivingGame() {
   const mountRef = useRef(null);
+  const [gameStarted, setGameStarted] = useState(false); // Renamed to avoid potential conflicts
+  const [gameScore, setGameScore] = useState(0); // Renamed for clarity
+  const animationFrameId = useRef(null);
+  const gameObjects = useRef({});
+
+  // Start game function
+  const handleStartGame = () => {
+    if (!gameStarted && mountRef.current) {
+      setGameStarted(true);
+      setGameScore(0);
+    }
+  };
 
   useEffect(() => {
-    if (!mountRef.current) return;
+    const mount = mountRef.current;
+    if (!mount) return;
 
-    // Cleanup any existing canvas
-    while (mountRef.current.firstChild) {
-      mountRef.current.removeChild(mountRef.current.firstChild);
+    // Cleanup existing canvas
+    while (mount.firstChild) {
+      mount.removeChild(mount.firstChild);
     }
-
-    // Constants from the original code
-    const COLORS = [0x69D2E7, 0xA7DBD8, 0xE0E4CC, 0xF38630, 0xFA6900, 0xFF4E50, 0xF9D423];
-    const RADIUS = 500; // Increased from 300 to 400
-    const spheres = [];
 
     // Scene Setup
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, 1, 1, 10000); // Aspect ratio will be updated in resize
-    camera.position.z = 1200; // Adjusted to accommodate larger sphere
+    const camera = new THREE.PerspectiveCamera(75, 600 / 400, 0.1, 1000);
+    camera.position.set(0, 3, 8);
+    camera.lookAt(0, 0, 0);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(400, 400); // Increased canvas size to accommodate larger sphere
+    renderer.setSize(600, 400);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    mountRef.current.appendChild(renderer.domElement);
+    renderer.shadowMap.enabled = true;
+    mount.appendChild(renderer.domElement);
 
-    // Orbit Controls for interactivity
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableZoom = false; // Disable zooming (optional)
-    controls.enablePan = false; // Disable panning (optional)
-    controls.autoRotate = false; // Disable auto-rotation (we'll handle rotation manually)
-    controls.minDistance = 500; // Minimum zoom distance
-    controls.maxDistance = 1500; // Maximum zoom distance
+    // Lighting
+    const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+    scene.add(ambientLight);
+    const directionalLight = new THREE.DirectionalLight(0x00ffff, 1.2);
+    directionalLight.position.set(5, 10, 5);
+    directionalLight.castShadow = true;
+    scene.add(directionalLight);
 
-    // Central Sphere
-    const geometry = new THREE.SphereGeometry(RADIUS, 30, 30);
-    const material = new THREE.MeshBasicMaterial({ color: 0x333344 });
-    const centralMesh = new THREE.Mesh(geometry, material);
-    scene.add(centralMesh);
+    // Background
+    const bgGeometry = new THREE.SphereGeometry(500, 32, 32);
+    const bgMaterial = new THREE.MeshBasicMaterial({
+      color: 0x0a0a1a,
+      side: THREE.BackSide,
+    });
+    const background = new THREE.Mesh(bgGeometry, bgMaterial);
+    scene.add(background);
 
-    // Orbiting Spheres
-    for (let i = 0; i < 30; i++) {
-      const sphereGeometry = new THREE.SphereGeometry(Math.random() * 25 + 15, 10, 10); // Increased size: random between 15 and 40
-      const sphereMaterial = new THREE.MeshBasicMaterial({ color: COLORS[Math.floor(Math.random() * COLORS.length)] });
-      const sphereMesh = new THREE.Mesh(sphereGeometry, sphereMaterial);
+    // Road
+    const roadGeometry = new THREE.PlaneGeometry(8, 1000);
+    const roadMaterial = new THREE.MeshPhongMaterial({
+      color: 0x1a1a1a,
+      shininess: 10,
+    });
+    const road = new THREE.Mesh(roadGeometry, roadMaterial);
+    road.rotation.x = -Math.PI / 2;
+    road.position.y = -0.01;
+    road.receiveShadow = true;
+    scene.add(road);
 
-      // Use spherical coordinates to position the sphere on the surface of the central sphere
-      const theta = Math.random() * 2 * Math.PI; // Random angle66 in the XY plane
-      const phi = Math.acos(2 * Math.random() - 1); // Random angle from the Z-axis
-      const x = RADIUS * Math.sin(phi) * Math.cos(theta);
-      const y = RADIUS * Math.sin(phi) * Math.sin(theta);
-      const z = RADIUS * Math.cos(phi);
-      sphereMesh.position.set(x, y, z);
-
-      // Apply random initial rotation for self-rotation
-      sphereMesh.rotation.x = Math.random() * 100;
-      sphereMesh.rotation.y = Math.random() * 100;
-      sphereMesh.rotation.z = Math.random() * 100;
-
-      // Store initial spherical coordinates and a random orbital speed for each sphere
-      sphereMesh.userData = {
-        theta: theta,
-        phi: phi,
-        orbitalSpeed: 0.01 + Math.random() * 0.02, // Random speed for orbiting
-      };
-
-      scene.add(sphereMesh);
-      spheres.push(sphereMesh);
+    // Road Lines
+    const lineGeometry = new THREE.PlaneGeometry(0.2, 1.5);
+    const lineMaterial = new THREE.MeshBasicMaterial({ color: 0x00ffff });
+    const lines = [];
+    for (let z = -500; z <= 500; z += 4) {
+      const line = new THREE.Mesh(lineGeometry, lineMaterial);
+      line.rotation.x = -Math.PI / 2;
+      line.position.set(0, 0.01, z);
+      scene.add(line);
+      lines.push(line);
     }
 
+    // Car
+    const carGroup = new THREE.Group();
+    const carBodyGeometry = new THREE.BoxGeometry(1.2, 0.4, 2.5);
+    const carBodyMaterial = new THREE.MeshPhongMaterial({
+      color: 0x00ffff,
+      shininess: 50,
+    });
+    const carBody = new THREE.Mesh(carBodyGeometry, carBodyMaterial);
+    carBody.position.y = 0.2;
+    carBody.castShadow = true;
+    carGroup.add(carBody);
+
+    const carTopGeometry = new THREE.BoxGeometry(0.8, 0.2, 1.5);
+    const carTop = new THREE.Mesh(carTopGeometry, carBodyMaterial);
+    carTop.position.y = 0.5;
+    carTop.castShadow = true;
+    carGroup.add(carTop);
+
+    const wheelGeometry = new THREE.CylinderGeometry(0.2, 0.2, 0.3, 16);
+    const wheelMaterial = new THREE.MeshPhongMaterial({ color: 0x1a1a1a });
+    const wheels = [];
+    for (let i = 0; i < 4; i++) {
+      const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+      wheel.rotation.z = Math.PI / 2;
+      wheel.position.set(
+        i % 2 === 0 ? -0.75 : 0.75,
+        0.15,
+        i < 2 ? -0.8 : 0.8
+      );
+      wheel.castShadow = true;
+      carGroup.add(wheel);
+      wheels.push(wheel);
+    }
+
+    carGroup.position.set(0, 0, 0);
+    scene.add(carGroup);
+
+    // Obstacles
+    const obstacles = [];
+    const obstacleGeometry = new THREE.BoxGeometry(1, 1, 1);
+    const obstacleMaterial = new THREE.MeshPhongMaterial({
+      color: 0x00ffff,
+      shininess: 20,
+    });
+    const spawnObstacle = () => {
+      const obstacle = new THREE.Mesh(obstacleGeometry, obstacleMaterial);
+      obstacle.position.set(
+        Math.floor(Math.random() * 7) - 3,
+        0.5,
+        -30 - Math.random() * 20
+      );
+      obstacle.castShadow = true;
+      scene.add(obstacle);
+      obstacles.push(obstacle);
+    };
+
+    // Game Variables
+    let speed = 0.15;
+    let carX = 0;
+    let gameOver = false;
+    let lastSpawn = 0;
+    let localScore = 0;
+
+    // Controls
+    let leftPressed = false;
+    let rightPressed = false;
+
+    const onKeyDown = (event) => {
+      if (event.key === 'ArrowLeft') leftPressed = true;
+      if (event.key === 'ArrowRight') rightPressed = true;
+    };
+
+    const onKeyUp = (event) => {
+      if (event.key === 'ArrowLeft') leftPressed = false;
+      if (event.key === 'ArrowRight') rightPressed = false;
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+
+    // Score Display
+    const scoreElement = document.createElement('div');
+    scoreElement.style.position = 'absolute';
+    scoreElement.style.top = '10px';
+    scoreElement.style.left = '10px';
+    scoreElement.style.color = '#00ffff';
+    scoreElement.style.fontFamily = 'Arial, sans-serif';
+    scoreElement.style.fontSize = '24px';
+    scoreElement.style.textShadow = '0 0 5px #00ffff';
+    scoreElement.innerText = `Score: ${localScore}`;
+    mount.appendChild(scoreElement);
+
     // Animation Loop
-    const animate = () => {
-      requestAnimationFrame(animate);
+    const animate = (time) => {
+      if (!gameStarted) return;
 
-      // Update each sphere's position to make it orbit around the central sphere
-      for (let i = 0; i < spheres.length; i++) {
-        const sphere = spheres[i];
+      animationFrameId.current = requestAnimationFrame(animate);
 
-        // Update theta to make the sphere orbit around the central sphere
-        sphere.userData.theta += sphere.userData.orbitalSpeed;
-
-        // Recalculate position using spherical coordinates
-        const x = RADIUS * Math.sin(sphere.userData.phi) * Math.cos(sphere.userData.theta);
-        const y = RADIUS * Math.sin(sphere.userData.phi) * Math.sin(sphere.userData.theta);
-        const z = RADIUS * Math.cos(sphere.userData.phi);
-        sphere.position.set(x, y, z);
-
-        // Continue self-rotation
-        sphere.rotation.x += 0.01;
-        sphere.rotation.y += 0.01;
-        sphere.rotation.z += 0.01;
+      if (gameOver) {
+        speed *= 0.95;
+        if (speed < 0.01) {
+          alert(`Game Over! Final Score: ${localScore}`);
+          setGameStarted(false);
+          setGameScore(localScore);
+          localScore = 0;
+          speed = 0.15;
+          gameOver = false;
+          carX = 0;
+          carGroup.position.set(0, 0, 0);
+          obstacles.forEach(obstacle => scene.remove(obstacle));
+          obstacles.length = 0;
+          return;
+        }
       }
 
-      // Update controls
-      controls.update();
+      // Move car
+      const moveSpeed = 0.08;
+      if (leftPressed && carX > -3) carX -= moveSpeed;
+      if (rightPressed && carX < 3) carX += moveSpeed;
+      carGroup.position.x = THREE.MathUtils.lerp(carGroup.position.x, carX, 0.1);
+
+      // Animate wheels
+      wheels.forEach(wheel => {
+        wheel.rotation.x += speed * 5;
+      });
+
+      // Move road lines
+      lines.forEach(line => {
+        line.position.z += speed;
+        if (line.position.z > 8) {
+          line.position.z -= 1000;
+          if (!gameOver) localScore += 5;
+        }
+      });
+
+      // Move and manage obstacles
+      obstacles.forEach((obstacle, index) => {
+        obstacle.position.z += speed;
+        obstacle.rotation.y += 0.02;
+        if (obstacle.position.z > 8) {
+          scene.remove(obstacle);
+          obstacles.splice(index, 1);
+        }
+
+        // Collision detection
+        const carBox = new THREE.Box3().setFromObject(carGroup);
+        const obstacleBox = new THREE.Box3().setFromObject(obstacle);
+        if (carBox.intersectsBox(obstacleBox) && !gameOver) {
+          gameOver = true;
+          speed = 0.2;
+        }
+      });
+
+      // Spawn obstacles
+      if (time - lastSpawn > 2000 && !gameOver) {
+        spawnObstacle();
+        lastSpawn = time;
+      }
+
+      // Update camera
+      camera.position.lerp(
+        new THREE.Vector3(carGroup.position.x, 3, carGroup.position.z + 8),
+        0.05
+      );
+      camera.lookAt(carGroup.position);
+
+      // Update score display
+      scoreElement.innerText = `Score: ${localScore}`;
 
       renderer.render(scene, camera);
     };
 
-    animate();
+    // Start animation when game starts
+    if (gameStarted) {
+      animationFrameId.current = requestAnimationFrame(animate);
+    }
+
+    // Store game objects for cleanup
+    gameObjects.current = {
+      scene,
+      camera,
+      renderer,
+      road,
+      carGroup,
+      background,
+      lines,
+      obstacles,
+      scoreElement,
+      onKeyDown,
+      onKeyUp,
+    };
 
     // Handle Resize
     const handleResize = () => {
-      const newWidth = mountRef.current.clientWidth;
-      const newHeight = mountRef.current.clientHeight;
-
+      const newWidth = mount.clientWidth;
+      const newHeight = mount.clientHeight;
       camera.aspect = newWidth / newHeight;
       camera.updateProjectionMatrix();
-
       renderer.setSize(newWidth, newHeight);
     };
-
-    // Initial resize to set correct dimensions
-    handleResize();
-
-    // Add resize event listener
     window.addEventListener('resize', handleResize);
 
-    // Cleanup Function
+    // Cleanup
     return () => {
+      const { renderer, scoreElement, scene, road, carGroup, background, lines, obstacles } = gameObjects.current;
       window.removeEventListener('resize', handleResize);
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
 
-      if (mountRef.current && renderer.domElement) {
-        mountRef.current.removeChild(renderer.domElement);
+      if (animationFrameId.current) {
+        cancelAnimationFrame(animationFrameId.current);
       }
 
-      geometry.dispose();
-      material.dispose();
-      spheres.forEach(sphere => {
-        sphere.geometry.dispose();
-        sphere.material.dispose();
-        scene.remove(sphere);
-      });
-      scene.remove(centralMesh);
-      renderer.dispose();
-      controls.dispose();
+      if (mount && renderer?.domElement) {
+        mount.removeChild(renderer.domElement);
+        if (scoreElement) mount.removeChild(scoreElement);
+      }
+
+      if (scene) {
+        scene.remove(road, carGroup, background);
+        lines.forEach(line => scene.remove(line));
+        obstacles.forEach(obstacle => scene.remove(obstacle));
+        [roadGeometry, lineGeometry, carBodyGeometry, carTopGeometry, wheelGeometry, obstacleGeometry, bgGeometry].forEach(geo => geo.dispose());
+        [roadMaterial, lineMaterial, carBodyMaterial, wheelMaterial, obstacleMaterial, bgMaterial].forEach(mat => mat.dispose());
+        scene.remove(ambientLight, directionalLight);
+      }
+      if (renderer) renderer.dispose();
     };
-  }, []);
+  }, [gameStarted]);
 
   return (
-    <div className="container">
+    <div className="container" onClick={handleStartGame}>
       <div ref={mountRef} className="canvas" />
+      {!gameStarted && (
+        <div className="overlay">
+          Click to Start Driving!
+        </div>
+      )}
       <style jsx>{`
         .container {
-          width: 400px; /* Increased to match renderer size */
-          height: 400px; /* Increased to match renderer size */
+          width: 600px;
+          height: 400px;
           position: relative;
+          background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1a 100%);
+          border-radius: 10px;
+          overflow: hidden;
+          box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
+          cursor: ${!gameStarted ? 'pointer' : 'default'};
         }
-
         .canvas {
           width: 100%;
           height: 100%;
-          /* Background is transparent */
+        }
+        .overlay {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          background: rgba(0, 0, 0, 0.7);
+          color: #00ffff;
+          font-size: 32px;
+          font-family: Arial, sans-serif;
+          text-shadow: 0 0 10px #00ffff;
         }
       `}</style>
     </div>
