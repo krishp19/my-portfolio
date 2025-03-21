@@ -46,16 +46,16 @@ const Footer = () => {
             <ul className="space-y-2 text-sm text-gray-300">
               <li>
                 <span className="text-teal-400">Email:</span>{' '}
-                <a href="mailto:krish@example.com" className="hover:text-teal-400 transition-colors duration-300">
-                  krish@example.com
+                <a href="mailto:krishprasad.work@gmail.com" className="hover:text-teal-400 transition-colors duration-300">
+                  krishprasad.work@gmail.com
                 </a>
               </li>
-              <li><span className="text-teal-400">Phone:</span> +91 123-456-7890</li>
+              <li><span className="text-teal-400">Phone:</span> +91 738-392-3807</li>
               <li><span className="text-teal-400">Location:</span> Ahmedabad, India</li>
             </ul>
             <div className="flex space-x-4">
               <a
-                href="https://github.com/yourusername"
+                href="https://github.com/krishp19"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="group relative text-gray-400 hover:text-teal-400 transition-colors duration-300"
@@ -64,7 +64,7 @@ const Footer = () => {
                 <span className="relative z-10">GitHub</span>
               </a>
               <a
-                href="https://www.linkedin.com/in/yourname"
+                href="https://www.linkedin.com/krish-prasad"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="group relative text-gray-400 hover:text-teal-400 transition-colors duration-300"
