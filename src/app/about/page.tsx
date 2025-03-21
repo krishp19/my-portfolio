@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import DeveloperShowcase from '@/components/Card3D';
 import Footer from '@/components/Footer';
+import Link from 'next/link';
 
 const AboutPage = () => {
   // Animation variants for fade-in on scroll
@@ -171,12 +172,12 @@ const AboutPage = () => {
           <h2 className="text-2xl text-gray-300 mb-4">
             Let’s Build Something Amazing Together!
           </h2>
-          <a
+          <Link
             href="/contact"
             className="bg-teal-400 rounded-lg text-gray-900 duration-300 font-semibold hover:bg-teal-500 inline-block px-6 py-3 transition-colors"
           >
             Get in Touch
-          </a>
+          </Link>
         </motion.section>
       </div>
 

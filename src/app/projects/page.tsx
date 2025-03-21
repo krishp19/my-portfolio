@@ -7,6 +7,7 @@ import Link from "next/link";
 import { projects } from "@/data/project"; // ✅ Import from data file
 import DeveloperShowcase from '@/components/Card3D'; // Import DeveloperShowcase for particle background
 import Footer from '@/components/Footer'; // Import Footer for consistency
+import Image from "next/image";
 
 const Projects = () => {
   const [filter, setFilter] = useState("All");
@@ -68,7 +69,9 @@ const Projects = () => {
                 }}
               >
                 {/* Project Image */}
-                <img
+                <Image
+                height={350}
+                width={350}
                   src={project.image}
                   alt={project.title}
                   className="h-full w-full duration-500 group-hover:opacity-30 object-cover transition-opacity"

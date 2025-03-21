@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'; // Import framer-motion for animations
 import DeveloperShowcase from '@/components/Card3D';
 import OrbitingSpheres from '@/components/Sphere';
 import Footer from '@/components/Footer'; // Import Footer for consistency
+import Image from 'next/image';
 
 export default function Home() {
   // State for typewriter effect
@@ -55,7 +56,7 @@ export default function Home() {
           {/* Right Side - Content */}
           <div className="w-full md:pl-8 md:w-1/2 space-y-6">
             <h1 className="bg-clip-text bg-gradient-to-r text-4xl text-transparent duration-300 ease-in-out font-extrabold from-teal-400 hover:scale-105 sm:text-5xl to-blue-500 tracking-tight transition-transform">
-              Hi, I'm Krish Prasad
+            Hi, I&apos;m Krish Prasad
             </h1>
 
             {/* Typewriter Effect with Glowing Animation */}
@@ -144,7 +145,9 @@ export default function Home() {
 
           {/* Right Side - Smaller Image */}
           <div className="flex justify-center w-full items-center mb-6 md:mb-0 md:w-1/2">
-            <img
+            <Image
+            height={350}
+              width={350}
               src="https://tomoliverharrison.co.uk/wp-content/themes/toh2025/dist/images/puzzle-cube-resized.png"
               alt="Puzzle Cube"
               className="h-auto rounded-lg shadow-xl duration-300 ease-in-out hover:scale-105 max-w-xs transform transition-transform"

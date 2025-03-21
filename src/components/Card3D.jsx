@@ -36,7 +36,7 @@ export default function DeveloperShowcase() {
     scene.add(pointLight);
 
     // Scattered Particles Across the Viewport
-    const particleCount = 2000; // Current particle count
+    const particleCount = 1500; // Current particle count
     const particlesGeometry = new THREE.BufferGeometry();
     const positions = new Float32Array(particleCount * 3);
     const velocities = new Float32Array(particleCount * 3);
